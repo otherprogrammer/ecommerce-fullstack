@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axiosInstance from '../services/axiosInstance'; 
-import { Link, useLocation } from 'react-router-dom';
-import { API_BASE_URL } from '../config'; 
+import { Link, useLocation } from 'react-router-dom'; 
 
 
 const ProductList = () => {

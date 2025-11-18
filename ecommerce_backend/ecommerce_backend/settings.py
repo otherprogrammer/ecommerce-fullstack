@@ -168,7 +168,12 @@ CORS_ALLOWED_ORIGINS_ENV = os.environ.get('CORS_ALLOWED_ORIGINS', '')
 if CORS_ALLOWED_ORIGINS_ENV:
     CORS_ALLOWED_ORIGINS = [origin.strip() for origin in CORS_ALLOWED_ORIGINS_ENV.split(',') if origin.strip()]
 else:
-    CORS_ALLOWED_ORIGINS = []
+    # Defaults para desarrollo y producción si no hay variable de entorno
+    CORS_ALLOWED_ORIGINS = [
+        'http://localhost:5173',
+        'http://localhost:3000',
+        'https://ecommerce-front-xi-tan.vercel.app',
+    ]
 
 # Configuración adicional de CORS para seguridad
 CORS_ALLOW_CREDENTIALS = True

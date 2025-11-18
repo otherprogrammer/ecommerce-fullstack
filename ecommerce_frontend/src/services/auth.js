@@ -38,10 +38,7 @@ export const refreshToken = async (refresh_token) => {
     }
 };
 
-// Esta es la función de logout que limpia el localStorage.
-// El interceptor la llamará directamente cuando el token de refresco falle.
 export const logout = () => {
     localStorage.removeItem('access_token');
     localStorage.removeItem('refresh_token');
-    console.log("Tokens eliminados del localStorage por auth.js."); // Para depuración
 };

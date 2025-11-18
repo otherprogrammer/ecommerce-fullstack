@@ -17,9 +17,7 @@ export const AuthProvider = ({ children }) => {
             const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
                 return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
             }).join(''));
-            const decoded = JSON.parse(jsonPayload);
-            console.log("1. Decoded JWT Payload in AuthContext:", decoded); // <-- AÑADIDO PARA DEBUG
-            return decoded;
+            return JSON.parse(jsonPayload);
         } catch (error) {
             console.error("Error decodificando JWT:", error);
             return null;
@@ -37,7 +35,6 @@ export const AuthProvider = ({ children }) => {
                         username: decodedToken.username,
                         is_staff: decodedToken.is_staff || false
                     });
-                    console.log("2. User state from loaded token in AuthContext (initial load/valid):", { username: decodedToken.username, is_staff: decodedToken.is_staff || false });
                 } else {
                     // Si el token ha expirado o es inválido, intentar refrescarlo
                     const refreshToken = localStorage.getItem('refresh_token');
@@ -50,7 +47,6 @@ export const AuthProvider = ({ children }) => {
                                 username: newDecodedToken.username,
                                 is_staff: newDecodedToken.is_staff || false
                             });
-                            console.log("3. User state after token refresh in AuthContext:", { username: newDecodedToken.username, is_staff: newDecodedToken.is_staff || false });
                         } catch (error) {
                             console.error("Error refreshing token in AuthContext:", error);
                             // Si el refresco falla, limpiar tokens y redirigir
@@ -84,7 +80,6 @@ export const AuthProvider = ({ children }) => {
                 email: decodedToken.email,
                 is_staff: decodedToken.is_staff || false
             });
-            console.log("4. User state after direct login in AuthContext:", { username: decodedToken.username, is_staff: decodedToken.is_staff || false });
             setLoading(false);
             return data;
         } catch (error) {
