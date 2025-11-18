@@ -19,7 +19,7 @@ const CategoryAdmin = () => {
     }, 1000);
   }, []);
 
-  if (!user || !user.isAdmin) {
+  if (!user || !user.is_staff) {
     return (
       <div className="flex justify-center items-center h-64 bg-red-100 border border-red-300 text-red-700 p-4 rounded-md mt-8">
         <p className="text-xl font-semibold">Acceso denegado. Solo administradores pueden ver esta página.</p>
