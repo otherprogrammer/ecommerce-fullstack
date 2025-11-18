@@ -49,15 +49,27 @@ const Register = () => {
       console.error('Error en registro:', err);
       // Manejar errores del backend - err ya viene como objeto con los campos
       if (err && typeof err === 'object') {
+        // Procesar errores que vienen como arrays (ej: password: ["error1", "error2"])
+        const processedErrors = {};
+        Object.keys(err).forEach(key => {
+          if (Array.isArray(err[key])) {
+            // Si es array, unir los mensajes
+            processedErrors[key] = err[key].join(' ');
+          } else {
+            processedErrors[key] = err[key];
+          }
+        });
+        
         // Si viene con estructura de errores de campo
-        if (err.username || err.email || err.password || err.password2 || err.phone_number) {
-          setErrors(err);
-        } else if (err.detail) {
-          setErrors({ general: err.detail });
-        } else if (err.error) {
-          setErrors({ general: err.error });
+        if (processedErrors.username || processedErrors.email || processedErrors.password || 
+            processedErrors.password2 || processedErrors.phone_number) {
+          setErrors(processedErrors);
+        } else if (processedErrors.detail) {
+          setErrors({ general: processedErrors.detail });
+        } else if (processedErrors.error) {
+          setErrors({ general: processedErrors.error });
         } else {
-          setErrors({ general: JSON.stringify(err) });
+          setErrors({ general: JSON.stringify(processedErrors) });
         }
       } else {
         setErrors({ general: 'No se pudo registrar. Intenta de nuevo.' });
