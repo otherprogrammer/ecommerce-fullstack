@@ -97,8 +97,9 @@ export const AuthProvider = ({ children }) => {
     const register = async (userData) => {
         try {
             setLoading(true);
-            const data = await authService.register(userData.username, userData.email, userData.password, userData.password2); 
+            const data = await authService.register(userData); 
             setLoading(false);
+            // Registro exitoso - el usuario debe ir a login
             return data;
         } catch (error) {
             setLoading(false);
