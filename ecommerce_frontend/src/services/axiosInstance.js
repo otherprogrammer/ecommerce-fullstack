@@ -51,7 +51,7 @@ axiosInstance.interceptors.response.use(
         // Si la respuesta es 401 (Unauthorized)
         // y no es la petición de login/registro o de refresco de token (para evitar bucles)
         if (error.response.status === 401 && !originalRequest._retry && 
-            !(originalRequest.url.includes('/api/token/') || originalRequest.url.includes('/api/token/refresh/'))) {
+            !(originalRequest.url.includes('/token/') || originalRequest.url.includes('/token/refresh/'))) {
             
             originalRequest._retry = true; // Marca la petición original para no reintentarla infinitamente
 
