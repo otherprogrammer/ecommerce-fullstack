@@ -142,7 +142,7 @@ const Register = () => {
               required
             />
             {errors.password && <p className="text-red-500 text-sm mt-1">{errors.password}</p>}
-            <p className="text-xs text-gray-500 mt-1">Mínimo 8 caracteres, no puede contener tu usuario o email</p>
+            <p className="text-xs text-gray-500 mt-1">Mínimo 8 caracteres</p>
           </div>
 
           <div>

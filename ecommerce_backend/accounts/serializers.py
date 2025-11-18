@@ -1,6 +1,5 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
-from django.contrib.auth.password_validation import validate_password
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 import re
 
@@ -11,8 +10,12 @@ class RegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(
         write_only=True,
         required=True,
-        validators=[validate_password],
-        style={'input_type': 'password'}
+        min_length=8,
+        style={'input_type': 'password'},
+        error_messages={
+            'min_length': 'La contraseña debe tener al menos 8 caracteres.',
+            'required': 'La contraseña es requerida.'
+        }
     )
     password2 = serializers.CharField(
         write_only=True,
@@ -63,20 +66,12 @@ class RegisterSerializer(serializers.ModelSerializer):
     def validate(self, data):
         """Validación global"""
         if data['password'] != data['password2']:
-            raise serializers.ValidationError({"password": "Las contraseñas no coinciden."})
+            raise serializers.ValidationError({"password2": "Las contraseñas no coinciden."})
         
-        # Validar que el password no contenga el username ni el email
-        username = data.get('username', '').lower()
-        email = data.get('email', '').lower()
-        password = data.get('password', '').lower()
-        
-        if username in password:
+        # Validación simple de longitud (ya está en el campo, pero por si acaso)
+        if len(data['password']) < 8:
             raise serializers.ValidationError(
-                {"password": "La contraseña no puede contener el nombre de usuario."}
-            )
-        if email.split('@')[0] in password:
-            raise serializers.ValidationError(
-                {"password": "La contraseña no puede contener partes del correo electrónico."}
+                {"password": "La contraseña debe tener al menos 8 caracteres."}
             )
         
         return data
