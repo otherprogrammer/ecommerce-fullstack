@@ -44,12 +44,12 @@ function App() {
             </ProtectedRoute>
           } />
           <Route path="/categorias" element={
-            <ProtectedRoute>
+            <ProtectedRoute requireAdmin={true}>
               <CategoryAdmin />
             </ProtectedRoute>
           } />
           <Route path="/productos/admin" element={
-            <ProtectedRoute>
+            <ProtectedRoute requireAdmin={true}>
               <ProductAdmin />
             </ProtectedRoute>
           } />
