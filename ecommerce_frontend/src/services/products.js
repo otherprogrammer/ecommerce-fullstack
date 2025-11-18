@@ -4,7 +4,8 @@ import axiosInstance from './axiosInstance';
 export const getProducts = async (params = {}) => {
     try {
         const response = await axiosInstance.get('/products/', { params });
-        return response.data;
+        // DRF devuelve objeto paginado: {count, next, previous, results}
+        return response.data.results || response.data;
     } catch (error) {
         throw error.response?.data || { detail: 'Error al obtener productos' };
     }
