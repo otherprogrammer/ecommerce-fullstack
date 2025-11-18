@@ -4,15 +4,15 @@ import { Route, Routes } from 'react-router-dom';
 
 // Importa tus componentes de página
 import Home from './components/Home.jsx';
-import ProductoList from './components/ProductList';
-import ProductoDetalle from './components/ProductDetalle';
-import Carrito from './components/Cart';
+import ProductList from './components/ProductList';
+import ProductDetalle from './components/ProductDetalle';
+import Cart from './components/Cart';
 import Navbar from './components/Navbar';
 import Checkout from './components/Checkout';
 import Login from './components/Login.jsx';
 import Register from './components/Register.jsx';
-import CategoriaAdmin from './components/CategoryAdmin.jsx';
-import ProductoAdmin from './components/ProductAdmin.jsx';
+import CategoryAdmin from './components/CategoryAdmin.jsx';
+import ProductAdmin from './components/ProductAdmin.jsx';
 import Profile from './components/Profile';
 
 function App() {
@@ -27,12 +27,12 @@ function App() {
           <Route path="/register" element={<Register />} />
           <Route path="/login" element={<Login />} />
           <Route path="/profile" element={<Profile />} />
-          <Route path="/productos" element={<ProductoList />} />
-          <Route path="/productos/:id" element={<ProductoDetalle />} />
-          <Route path="/carrito" element={<Carrito />} />
+          <Route path="/productos" element={<ProductList />} />
+          <Route path="/productos/:id" element={<ProductDetalle />} />
+          <Route path="/carrito" element={<Cart />} />
           <Route path="/checkout" element={<Checkout />} />
-          <Route path="/categorias" element={<CategoriaAdmin />} />
-          <Route path="/productos/admin" element={<ProductoAdmin />} />
+          <Route path="/categorias" element={<CategoryAdmin />} />
+          <Route path="/productos/admin" element={<ProductAdmin />} />
           {/* Añade más rutas si tienes */}
         </Routes>
       </main>
