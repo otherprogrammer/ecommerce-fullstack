@@ -21,7 +21,8 @@ const ProductList = () => {
                 // Construye la URL relativa a la base URL ya configurada en axiosInstance
                 let url = '/products/'; 
                 if (categorySlug) {
-                    url += `?category=${categorySlug}`;
+                    // Django filtro usa category__slug, no solo category
+                    url += `?category__slug=${categorySlug}`;
                 }
 
                 // Usa axiosInstance en lugar de axios
