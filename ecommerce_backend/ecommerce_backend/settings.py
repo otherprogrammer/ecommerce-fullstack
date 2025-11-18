@@ -119,8 +119,23 @@ else:
 
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
-# ¡Ojo! Tenerlo vacío es inseguro para producción. Considera habilitar algunas validaciones.
-AUTH_PASSWORD_VALIDATORS = [] # <-- Ya está aquí, lo mantendremos por ahora como lo tienes.
+AUTH_PASSWORD_VALIDATORS = [
+    {
+        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
+    },
+    {
+        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
+        'OPTIONS': {
+            'min_length': 8,
+        }
+    },
+    {
+        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
+    },
+    {
+        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
+    },
+]
 
 
 # Internationalization
@@ -148,8 +163,26 @@ STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Configuración de CORS
-CORS_ALLOW_ALL_ORIGINS = os.environ.get('CORS_ALLOW_ALL_ORIGINS', 'True') == 'True'
-CORS_ALLOWED_ORIGINS = os.environ.get('CORS_ALLOWED_ORIGINS', '').split(',') if os.environ.get('CORS_ALLOWED_ORIGINS') else []
+CORS_ALLOW_ALL_ORIGINS = os.environ.get('CORS_ALLOW_ALL_ORIGINS', 'False') == 'True'
+CORS_ALLOWED_ORIGINS_ENV = os.environ.get('CORS_ALLOWED_ORIGINS', '')
+if CORS_ALLOWED_ORIGINS_ENV:
+    CORS_ALLOWED_ORIGINS = [origin.strip() for origin in CORS_ALLOWED_ORIGINS_ENV.split(',') if origin.strip()]
+else:
+    CORS_ALLOWED_ORIGINS = []
+
+# Configuración adicional de CORS para seguridad
+CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOW_HEADERS = [
+    'accept',
+    'accept-encoding',
+    'authorization',
+    'content-type',
+    'dnt',
+    'origin',
+    'user-agent',
+    'x-csrftoken',
+    'x-requested-with',
+]
 
 # Especificar tu modelo de usuario personalizado
 AUTH_USER_MODEL = 'accounts.CustomUser' # <-- Ya lo tienes, ¡excelente!
@@ -157,25 +190,33 @@ AUTH_USER_MODEL = 'accounts.CustomUser' # <-- Ya lo tienes, ¡excelente!
 # Configuración de Django REST Framework
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
-        'rest_framework_simplejwt.authentication.JWTAuthentication', # <-- ¡AÑADIR ESTO!
-        # Puedes mantener 'rest_framework.authentication.SessionAuthentication' si también
-        # usas sesiones para el admin de Django, pero JWT va primero para la API.
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
         'rest_framework.authentication.SessionAuthentication',
     ),
     'DEFAULT_PERMISSION_CLASSES': (
-        # Por defecto, solo lectura para no autenticados, o solo autenticados si es más restrictivo
         'rest_framework.permissions.IsAuthenticatedOrReadOnly',
-    )
+    ),
+    'DEFAULT_THROTTLE_CLASSES': [
+        'rest_framework.throttling.AnonRateThrottle',
+        'rest_framework.throttling.UserRateThrottle'
+    ],
+    'DEFAULT_THROTTLE_RATES': {
+        'anon': '100/day',
+        'user': '1000/day'
+    },
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'PAGE_SIZE': 20,
+    'EXCEPTION_HANDLER': 'rest_framework.views.exception_handler',
 }
 
 # Configuración de DRF Simple JWT
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=5),  # El token de acceso dura 5 minutos
-    'REFRESH_TOKEN_LIFETIME': timedelta(days=1),    # El token de refresco dura 1 día
+    'ACCESS_TOKEN_LIFETIME': timedelta(hours=1),  # Token de acceso dura 1 hora
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),    # Token de refresco dura 7 días
 
-    'ROTATE_REFRESH_TOKENS': False,
-    'BLACKLIST_AFTER_ROTATION': False,
-    'UPDATE_LAST_LOGIN': False,
+    'ROTATE_REFRESH_TOKENS': True,
+    'BLACKLIST_AFTER_ROTATION': True,
+    'UPDATE_LAST_LOGIN': True,
 
     'ALGORITHM': 'HS256',
     'SIGNING_KEY': SECRET_KEY,
@@ -197,7 +238,29 @@ SIMPLE_JWT = {
 
     'JTI_CLAIM': 'jti',
 
-    # CUSTOMIZACIÓN CLAVE: Apunta a tu serializador personalizado
-    # Asegúrate que 'accounts.serializers.MyTokenObtainPairSerializer' sea la ruta correcta
-    'TOKEN_OBTAIN_SERIALIZER': 'accounts.serializers.MyTokenObtainPairSerializer', # <-- ¡AÑADIR ESTO!
+    'TOKEN_OBTAIN_SERIALIZER': 'accounts.serializers.MyTokenObtainPairSerializer',
 }
+
+# Configuraciones de seguridad adicionales para producción
+if not DEBUG:
+    # HTTPS/SSL
+    SECURE_SSL_REDIRECT = True
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SECURE_BROWSER_XSS_FILTER = True
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+    X_FRAME_OPTIONS = 'DENY'
+    SECURE_HSTS_SECONDS = 31536000  # 1 año
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
+    
+    # Configuración de proxy para Render
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+    
+    # CSRF trusted origins
+    CSRF_TRUSTED_ORIGINS = [
+        'https://*.onrender.com',
+        'https://*.vercel.app',
+    ]
+    if CORS_ALLOWED_ORIGINS:
+        CSRF_TRUSTED_ORIGINS.extend(CORS_ALLOWED_ORIGINS)

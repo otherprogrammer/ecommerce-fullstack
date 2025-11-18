@@ -1,46 +1,101 @@
-# ecommerce_backend/accounts/admin.py
 from django.contrib import admin
-from django.contrib.auth.admin import UserAdmin as BaseUserAdmin # Importar UserAdmin base
+from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
+from django.utils.html import format_html
 from .models import CustomUser
 
-# Primero, define un formulario personalizado para tu CustomUser
-# Esto es opcional, pero si tienes muchos campos personalizados, es útil
-# from django.contrib.auth.forms import UserCreationForm, UserChangeForm
-
-# class CustomUserCreationForm(UserCreationForm):
-#     class Meta(UserCreationForm.Meta):
-#         model = CustomUser
-#         fields = ('username', 'email', 'phone_number', 'address', 'document_id', 'user_type') # Añade todos tus campos personalizados aquí
-
-# class CustomUserChangeForm(UserChangeForm):
-#     class Meta(UserChangeForm.Meta):
-#         model = CustomUser
-#         fields = ('username', 'email', 'phone_number', 'address', 'document_id', 'user_type') # Añade todos tus campos personalizados aquí
-
-# Registra tu CustomUser en el admin usando UserAdmin o una subclase
 @admin.register(CustomUser)
-class CustomUserAdmin(BaseUserAdmin): # Hereda de BaseUserAdmin
-    # Si no usas CustomUserCreationForm/CustomUserChangeForm, el default funciona bien.
-    # add_form = CustomUserCreationForm
-    # form = CustomUserChangeForm
-
-    # Estos campos definen cómo se ven los usuarios en el listado del admin
-    list_display = ('username', 'email', 'user_type', 'is_staff', 'is_active')
-    list_filter = ('is_staff', 'is_active', 'user_type')
-
-    # Estos campos definen cómo se ve el formulario de edición de un usuario
+class CustomUserAdmin(BaseUserAdmin):
+    list_display = ('username', 'email', 'user_type_badge', 'full_name', 'is_staff_badge', 'is_active_badge', 'date_joined')
+    list_filter = ('is_staff', 'is_active', 'user_type', 'is_superuser', 'date_joined')
+    search_fields = ('username', 'email', 'first_name', 'last_name', 'phone_number')
+    ordering = ('-date_joined',)
+    list_per_page = 25
+    
     fieldsets = (
-        (None, {'fields': ('username', 'password')}), # Mantener 'password' aquí es CRÍTICO para el hasheo
-        ('Personal info', {'fields': ('first_name', 'last_name', 'email', 'phone_number', 'address', 'document_id', 'user_type')}), # Tus campos personalizados
-        ('Permissions', {'fields': ('is_active', 'is_staff', 'is_superuser', 'groups', 'user_permissions')}),
-        ('Important dates', {'fields': ('last_login', 'date_joined')}),
-    )
-    # Campos que se muestran cuando añades un nuevo usuario
-    add_fieldsets = (
-        (None, {
-            'classes': ('wide',),
-            'fields': ('username', 'email', 'phone_number', 'address', 'document_id', 'user_type', 'password', 'password2'),
+        ('Autenticación', {
+            'fields': ('username', 'password')
+        }),
+        ('Información Personal', {
+            'fields': ('first_name', 'last_name', 'email', 'phone_number', 'address', 'document_id')
+        }),
+        ('Tipo de Usuario', {
+            'fields': ('user_type',),
+            'description': 'Define el rol del usuario en el sistema'
+        }),
+        ('Permisos', {
+            'fields': ('is_active', 'is_staff', 'is_superuser', 'groups', 'user_permissions'),
+            'classes': ('collapse',)
+        }),
+        ('Fechas Importantes', {
+            'fields': ('last_login', 'date_joined'),
+            'classes': ('collapse',)
         }),
     )
-    search_fields = ('username', 'email', 'first_name', 'last_name')
-    ordering = ('username',)
+    
+    add_fieldsets = (
+        ('Crear Usuario', {
+            'classes': ('wide',),
+            'fields': ('username', 'email', 'password1', 'password2'),
+        }),
+        ('Información Adicional', {
+            'fields': ('first_name', 'last_name', 'phone_number', 'address', 'document_id', 'user_type'),
+        }),
+        ('Permisos Iniciales', {
+            'fields': ('is_staff', 'is_active'),
+        }),
+    )
+    
+    def user_type_badge(self, obj):
+        colors = {
+            'customer': '#28a745',
+            'admin': '#dc3545',
+            'delivery': '#ffc107',
+        }
+        labels = {
+            'customer': 'Cliente',
+            'admin': 'Admin',
+            'delivery': 'Repartidor',
+        }
+        color = colors.get(obj.user_type, '#6c757d')
+        label = labels.get(obj.user_type, obj.user_type)
+        return format_html(
+            '<span style="background-color: {}; color: white; padding: 3px 10px; border-radius: 3px; font-weight: bold;">{}</span>',
+            color, label
+        )
+    user_type_badge.short_description = 'Tipo'
+    
+    def full_name(self, obj):
+        if obj.first_name or obj.last_name:
+            return f"{obj.first_name} {obj.last_name}".strip()
+        return '-'
+    full_name.short_description = 'Nombre Completo'
+    
+    def is_staff_badge(self, obj):
+        if obj.is_staff:
+            return format_html('<span style="color: green;">✓</span>')
+        return format_html('<span style="color: #ccc;">✗</span>')
+    is_staff_badge.short_description = 'Staff'
+    
+    def is_active_badge(self, obj):
+        if obj.is_active:
+            return format_html('<span style="color: green;">✓ Activo</span>')
+        return format_html('<span style="color: red;">✗ Inactivo</span>')
+    is_active_badge.short_description = 'Estado'
+    
+    def get_readonly_fields(self, request, obj=None):
+        """Los superusers pueden editar todo, pero staff solo puede editar campos limitados"""
+        if not request.user.is_superuser:
+            return ('is_superuser', 'user_permissions', 'date_joined', 'last_login')
+        return ('date_joined', 'last_login')
+    
+    def has_delete_permission(self, request, obj=None):
+        """Solo superusers pueden eliminar usuarios"""
+        if obj and obj.is_superuser and not request.user.is_superuser:
+            return False
+        return super().has_delete_permission(request, obj)
+    
+    def has_change_permission(self, request, obj=None):
+        """Los usuarios staff no pueden modificar superusers"""
+        if obj and obj.is_superuser and not request.user.is_superuser:
+            return False
+        return super().has_change_permission(request, obj)
