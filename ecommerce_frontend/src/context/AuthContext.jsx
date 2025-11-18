@@ -104,6 +104,7 @@ export const AuthProvider = ({ children }) => {
         } catch (error) {
             setLoading(false);
             console.error("Registration failed:", error);
+            // Propagar el error tal como viene del servicio (ya formateado)
             throw error;
         }
     };

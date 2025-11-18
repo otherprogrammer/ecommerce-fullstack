@@ -40,13 +40,25 @@ const Register = () => {
     }
 
     try {
-      await register(formData);
+      const response = await register(formData);
+      console.log('Registro exitoso:', response);
+      // Mostrar mensaje de éxito y redirigir
+      alert('¡Registro exitoso! Ahora puedes iniciar sesión.');
       navigate('/login');
     } catch (err) {
       console.error('Error en registro:', err);
-      // Manejar errores del backend
-      if (typeof err === 'object') {
-        setErrors(err);
+      // Manejar errores del backend - err ya viene como objeto con los campos
+      if (err && typeof err === 'object') {
+        // Si viene con estructura de errores de campo
+        if (err.username || err.email || err.password || err.password2 || err.phone_number) {
+          setErrors(err);
+        } else if (err.detail) {
+          setErrors({ general: err.detail });
+        } else if (err.error) {
+          setErrors({ general: err.error });
+        } else {
+          setErrors({ general: JSON.stringify(err) });
+        }
       } else {
         setErrors({ general: 'No se pudo registrar. Intenta de nuevo.' });
       }

@@ -64,8 +64,8 @@ class ProductAdmin(admin.ModelAdmin):
 
 @admin.register(Coupon)
 class CouponAdmin(admin.ModelAdmin):
-    list_display = ('code', 'discount_display', 'active_status', 'usage_progress', 'valid_period', 'minimum_display')
-    list_filter = ('active', 'discount_type', 'valid_from', 'valid_until')
+    list_display = ('code', 'discount_display', 'active_status', 'usage_progress', 'minimum_display')
+    list_filter = ('active', 'discount_type')
     search_fields = ('code',)
     readonly_fields = ('used_count', 'created_at', 'updated_at')
     ordering = ('-created_at',)
@@ -109,19 +109,6 @@ class CouponAdmin(admin.ModelAdmin):
             color, obj.used_count, obj.usage_limit, int(percentage)
         )
     usage_progress.short_description = 'Uso'
-    
-    def valid_period(self, obj):
-        if obj.valid_from and obj.valid_until:
-            return format_html('{}<br>al<br>{}', 
-                obj.valid_from.strftime('%d/%m/%Y'), 
-                obj.valid_until.strftime('%d/%m/%Y')
-            )
-        elif obj.valid_from:
-            return format_html('Desde {}', obj.valid_from.strftime('%d/%m/%Y'))
-        elif obj.valid_until:
-            return format_html('Hasta {}', obj.valid_until.strftime('%d/%m/%Y'))
-        return 'Sin límite'
-    valid_period.short_description = 'Período'
     
     def minimum_display(self, obj):
         return format_html('S/. {:.2f}', obj.minimum_amount)
