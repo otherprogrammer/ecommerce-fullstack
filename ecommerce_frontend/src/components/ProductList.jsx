@@ -27,7 +27,12 @@ const ProductList = () => {
                 // Usa axiosInstance en lugar de axios
                 // No necesitas pasar headers de autorización aquí; el interceptor lo hace automáticamente
                 const response = await axiosInstance.get(url); 
-                setProducts(response.data);
+                
+                // Django REST Framework devuelve resultados paginados
+                // Si hay paginación, los productos están en response.data.results
+                // Si no hay paginación, están directamente en response.data
+                const productsData = response.data.results || response.data;
+                setProducts(Array.isArray(productsData) ? productsData : []);
             } catch (err) {
                 console.error("Error fetching products:", err);
                 setError('No se pudieron cargar los productos. Inténtalo de nuevo más tarde.');
