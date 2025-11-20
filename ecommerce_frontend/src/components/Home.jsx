@@ -1,14 +1,36 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import * as categoriesService from '../services/categories';
 
 const Home = () => {
-    const popularCategories = [
-        { name: 'Electrónica', slug: 'electronica', icon: '💻' },
-        { name: 'Ropa', slug: 'ropa', icon: '👕' },
-        { name: 'Hogar', slug: 'hogar', icon: '🏠' },
-        { name: 'Belleza', slug: 'belleza', icon: '💄' },
-        { name: 'Alimentos', slug: 'alimentos', icon: '🍎' },
-    ];
+    const [categories, setCategories] = useState([]);
+    const [loadingCategories, setLoadingCategories] = useState(true);
+
+    // Mapeo de iconos para las categorías
+    const categoryIcons = {
+        'electronica': '💻',
+        'ropa-moda': '👕',
+        'hogar-jardin': '🏠',
+        'salud-belleza': '💄',
+        'alimentos-bebidas': '🍎',
+        'deportes-fitness': '⚽',
+        'juguetes-juegos': '🎮',
+        'libros-medios': '📚'
+    };
+
+    useEffect(() => {
+        const fetchCategories = async () => {
+            try {
+                const data = await categoriesService.getCategories();
+                setCategories(data);
+            } catch (error) {
+                console.error('Error al cargar categorías:', error);
+            } finally {
+                setLoadingCategories(false);
+            }
+        };
+        fetchCategories();
+    }, []);
 
     const reasons = [
         { icon: '🚀', text: 'Envíos rápidos a todo el país' },
@@ -46,18 +68,22 @@ const Home = () => {
             <section className="py-16 bg-light-background mb-8">
                 <div className="container mx-auto px-4 text-center">
                     <h2 className="text-4xl font-heading font-bold text-dark-blue-gray mb-10">Categorías Populares</h2>
-                    <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6">
-                        {popularCategories.map((category) => (
-                            <Link
-                                key={category.slug}
-                                to={`/productos?category=${category.slug}`}
-                                className="bg-white p-6 rounded-lg shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300 flex flex-col items-center justify-center text-dark-blue-gray font-medium text-lg hover:bg-primary-blue hover:text-white"
-                            >
-                                <span className="text-4xl mb-2 text-primary-blue">{category.icon}</span>
-                                {category.name}
-                            </Link>
-                        ))}
-                    </div>
+                    {loadingCategories ? (
+                        <p className="text-gray-600">Cargando categorías...</p>
+                    ) : (
+                        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-4 gap-6">
+                            {categories.map((category) => (
+                                <Link
+                                    key={category.id}
+                                    to={`/productos?category=${category.slug}`}
+                                    className="bg-white p-6 rounded-lg shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300 flex flex-col items-center justify-center text-dark-blue-gray font-medium text-lg hover:bg-primary-blue hover:text-white"
+                                >
+                                    <span className="text-4xl mb-2">{categoryIcons[category.slug] || '📦'}</span>
+                                    {category.name}
+                                </Link>
+                            ))}
+                        </div>
+                    )}
                 </div>
             </section>
             <section className="py-16 bg-white shadow-inner">
