@@ -64,11 +64,12 @@ class ProductAdmin(admin.ModelAdmin):
 
 @admin.register(Coupon)
 class CouponAdmin(admin.ModelAdmin):
-    list_display = ('code', 'discount_display', 'active_status', 'usage_progress', 'minimum_display')
-    list_filter = ('active', 'discount_type')
+    list_display = ('code', 'discount_display', 'active_status', 'usage_progress', 'minimum_display', 'validity_period')
+    list_filter = ('active', 'discount_type', 'created_at')
     search_fields = ('code',)
     readonly_fields = ('used_count', 'created_at', 'updated_at')
     ordering = ('-created_at',)
+    list_per_page = 25
     
     fieldsets = (
         ('Información del Cupón', {
@@ -95,24 +96,51 @@ class CouponAdmin(admin.ModelAdmin):
     
     def active_status(self, obj):
         if obj.active:
-            return format_html('<span style="color: green;">✓ Activo</span>')
-        return format_html('<span style="color: red;">✗ Inactivo</span>')
+            return format_html('<span style="color: green; font-weight: bold;">✓ Activo</span>')
+        return format_html('<span style="color: red; font-weight: bold;">✗ Inactivo</span>')
     active_status.short_description = 'Estado'
     
     def usage_progress(self, obj):
         if obj.usage_limit == -1:
-            return format_html('<span style="color: #007bff;">Ilimitado ({} usos)</span>', obj.used_count)
-        percentage = (obj.used_count / obj.usage_limit * 100) if obj.usage_limit > 0 else 0
+            return format_html('<span style="color: #007bff;">{} usos (Ilimitado)</span>', obj.used_count)
+        if obj.usage_limit == 0:
+            return format_html('<span style="color: red;">Sin límite configurado</span>')
+        percentage = (obj.used_count / obj.usage_limit * 100)
         color = 'green' if percentage < 70 else 'orange' if percentage < 90 else 'red'
         return format_html(
-            '<span style="color: {};">{}/{} usos ({}%)</span>',
-            color, obj.used_count, obj.usage_limit, int(percentage)
+            '<span style="color: {}; font-weight: bold;">{}/{} ({:.0f}%)</span>',
+            color, obj.used_count, obj.usage_limit, percentage
         )
-    usage_progress.short_description = 'Uso'
+    usage_progress.short_description = 'Progreso de Uso'
     
     def minimum_display(self, obj):
-        return format_html('S/. {:.2f}', obj.minimum_amount)
+        if obj.minimum_amount > 0:
+            return format_html('<span style="color: #28a745;">S/. {:.2f}</span>', obj.minimum_amount)
+        return format_html('<span style="color: #6c757d;">Sin mínimo</span>')
     minimum_display.short_description = 'Compra Mínima'
+    
+    def validity_period(self, obj):
+        from django.utils import timezone
+        now = timezone.now()
+        
+        # Si no tiene fechas, es permanente
+        if not obj.valid_from and not obj.valid_until:
+            return format_html('<span style="color: #007bff;">Permanente</span>')
+        
+        # Si tiene fecha de inicio pero no ha empezado
+        if obj.valid_from and now < obj.valid_from:
+            return format_html('<span style="color: orange;">Inicia: {}</span>', obj.valid_from.strftime('%d/%m/%Y'))
+        
+        # Si tiene fecha de fin y ya expiró
+        if obj.valid_until and now > obj.valid_until:
+            return format_html('<span style="color: red;">Expiró: {}</span>', obj.valid_until.strftime('%d/%m/%Y'))
+        
+        # Si está dentro del periodo válido
+        if obj.valid_until:
+            return format_html('<span style="color: green;">Válido hasta: {}</span>', obj.valid_until.strftime('%d/%m/%Y'))
+        
+        return format_html('<span style="color: green;">Vigente</span>')
+    validity_period.short_description = 'Vigencia'
 
 # Personalizar el sitio de administración
 admin.site.site_header = "Ecommerce - Panel de Administración"
