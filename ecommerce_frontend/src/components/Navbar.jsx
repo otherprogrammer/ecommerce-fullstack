@@ -45,6 +45,7 @@ const Navbar = () => {
                                 <>
                                     <Link to="/productos/admin" className="hover:text-primary-blue transition-colors duration-300">Admin Productos</Link>
                                     <Link to="/categorias" className="hover:text-primary-blue transition-colors duration-300">Admin Categorías</Link>
+                                    <Link to="/cupones" className="hover:text-primary-blue transition-colors duration-300">Admin Cupones</Link>
                                 </>
                             )}
                             <Link to="/profile" className="hover:text-primary-blue transition-colors duration-300">Mi Cuenta</Link> {/* Ruta para perfil de usuario (puedes crearla después) */}
@@ -77,6 +78,7 @@ const Navbar = () => {
                                 <>
                                     <Link to="/productos/admin" className="block hover:text-primary-blue transition-colors duration-300 py-1">Admin Productos</Link>
                                     <Link to="/categorias" className="block hover:text-primary-blue transition-colors duration-300 py-1">Admin Categorías</Link>
+                                    <Link to="/cupones" className="block hover:text-primary-blue transition-colors duration-300 py-1">Admin Cupones</Link>
                                 </>
                             )}
                             <Link to="/profile" className="block hover:text-primary-blue transition-colors duration-300 py-1">Mi Cuenta</Link>

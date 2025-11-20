@@ -12,6 +12,7 @@ import Login from './components/Login.jsx';
 import Register from './components/Register.jsx';
 import CategoryAdmin from './components/CategoryAdmin.jsx';
 import ProductAdmin from './components/ProductAdmin.jsx';
+import CouponAdmin from './components/CouponAdmin.jsx';
 import Profile from './components/Profile';
 import ProtectedRoute from './components/ProtectedRoute';
 
@@ -51,6 +52,11 @@ function App() {
           <Route path="/productos/admin" element={
             <ProtectedRoute requireAdmin={true}>
               <ProductAdmin />
+            </ProtectedRoute>
+          } />
+          <Route path="/cupones" element={
+            <ProtectedRoute requireAdmin={true}>
+              <CouponAdmin />
             </ProtectedRoute>
           } />
         </Routes>
