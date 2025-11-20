@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import * as categoriesService from '../services/categories';
+import { useAuth } from '../context/AuthContext';
 
 const Home = () => {
+    const { user } = useAuth();
     const [categories, setCategories] = useState([]);
     const [loadingCategories, setLoadingCategories] = useState(true);
 
@@ -56,12 +58,14 @@ const Home = () => {
                         >
                             Ver productos
                         </Link>
-                        <Link
-                            to="/register"
-                            className="border-2 border-primary-blue text-primary-blue font-bold py-3 px-8 rounded-lg text-lg hover:bg-primary-blue hover:text-white transition-colors duration-300 shadow-md"
-                        >
-                            Regístrate
-                        </Link>
+                        {!user && (
+                            <Link
+                                to="/register"
+                                className="border-2 border-primary-blue text-primary-blue font-bold py-3 px-8 rounded-lg text-lg hover:bg-primary-blue hover:text-white transition-colors duration-300 shadow-md"
+                            >
+                                Regístrate
+                            </Link>
+                        )}
                     </div>
                 </div>
             </section>

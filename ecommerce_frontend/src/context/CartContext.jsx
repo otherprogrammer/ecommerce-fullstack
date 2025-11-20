@@ -1,16 +1,24 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import axiosInstance from '../services/axiosInstance'; 
+import { useAuth } from './AuthContext';
 
 // Creamos el contexto
-const CartContext = createContext(null); // Siempre inicializa con null o un valor predeterminado
+const CartContext = createContext(null);
 
 // Proveedor del contexto
 export const CartProvider = ({ children }) => {
-    // Inicializamos el carrito, intentando cargarlo desde localStorage
-    // Si no hay nada en localStorage, o si hay un error, se inicializa como un array vacío.
+    const { user } = useAuth();
+    
+    // Función para obtener la clave del carrito específica del usuario
+    const getCartKey = () => {
+        return user ? `cart_${user.username}` : 'cart_guest';
+    };
+
+    // Inicializamos el carrito, intentando cargarlo desde localStorage con clave específica por usuario
     const [cart, setCart] = useState(() => {
         try {
-            const localCart = localStorage.getItem('cart');
+            const cartKey = user ? `cart_${user.username}` : 'cart_guest';
+            const localCart = localStorage.getItem(cartKey);
             return localCart ? JSON.parse(localCart) : [];
         } catch (error) {
             console.error("Error loading cart from localStorage:", error);
@@ -18,14 +26,27 @@ export const CartProvider = ({ children }) => {
         }
     });
 
-    // Efecto para guardar el carrito en localStorage cada vez que cambia
+    // Efecto para guardar el carrito en localStorage con clave específica del usuario
     useEffect(() => {
         try {
-            localStorage.setItem('cart', JSON.stringify(cart));
+            const cartKey = getCartKey();
+            localStorage.setItem(cartKey, JSON.stringify(cart));
         } catch (error) {
             console.error("Error saving cart to localStorage:", error);
         }
-    }, [cart]);
+    }, [cart, user]);
+
+    // Efecto para cargar el carrito correcto cuando cambia el usuario
+    useEffect(() => {
+        try {
+            const cartKey = getCartKey();
+            const localCart = localStorage.getItem(cartKey);
+            setCart(localCart ? JSON.parse(localCart) : []);
+        } catch (error) {
+            console.error("Error loading cart on user change:", error);
+            setCart([]);
+        }
+    }, [user]);
 
     // Función para agregar al carrito (adaptada a los nombres esperados por Cart.jsx y ProductDetalle.jsx)
     const addToCart = async (productToAdd, quantityToAdd = 1) => {
