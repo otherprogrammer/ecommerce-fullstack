@@ -16,51 +16,12 @@ class CategoryAdmin(admin.ModelAdmin):
 
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
-    list_display = ('name', 'category', 'price_display', 'stock_status', 'image_preview', 'created_at')
+    list_display = ('name', 'category', 'price', 'stock', 'created_at')
     list_filter = ('category', 'created_at', 'stock')
     search_fields = ('name', 'description', 'category__name')
-    readonly_fields = ('created_at', 'updated_at', 'image_preview')
+    readonly_fields = ('created_at', 'updated_at')
     ordering = ('-created_at',)
     list_per_page = 25
-    
-    fieldsets = (
-        ('Información Básica', {
-            'fields': ('name', 'category', 'description')
-        }),
-        ('Precio e Inventario', {
-            'fields': ('price', 'stock')
-        }),
-        ('Imagen', {
-            'fields': ('image_url', 'image_preview')
-        }),
-        ('Fechas', {
-            'fields': ('created_at', 'updated_at'),
-            'classes': ('collapse',)
-        }),
-    )
-    
-    def price_display(self, obj):
-        return format_html('<span style="color: #007bff; font-weight: bold;">S/. {:.2f}</span>', obj.price)
-    price_display.short_description = 'Precio'
-    
-    def stock_status(self, obj):
-        if obj.stock == 0:
-            color = 'red'
-            status = 'Agotado'
-        elif obj.stock < 10:
-            color = 'orange'
-            status = f'Bajo ({obj.stock})'
-        else:
-            color = 'green'
-            status = f'Disponible ({obj.stock})'
-        return format_html('<span style="color: {}; font-weight: bold;">{}</span>', color, status)
-    stock_status.short_description = 'Stock'
-    
-    def image_preview(self, obj):
-        if obj.image_url:
-            return format_html('<img src="{}" width="100" height="100" style="object-fit: cover; border-radius: 8px;" />', obj.image_url)
-        return '-'
-    image_preview.short_description = 'Vista Previa'
 
 @admin.register(Coupon)
 class CouponAdmin(admin.ModelAdmin):
