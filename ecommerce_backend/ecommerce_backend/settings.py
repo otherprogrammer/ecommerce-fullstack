@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     'corsheaders',
     'rest_framework',
     'rest_framework_simplejwt',
+    'django_extensions',  # Para generar diagramas de BD
     'store',
     'accounts',
     'django.contrib.admin',
