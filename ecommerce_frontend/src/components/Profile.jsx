@@ -4,22 +4,72 @@ import { useNavigate, Link } from 'react-router-dom';
 import LoadingSpinner from './LoadingSpinner';
 
 const Profile = () => {
-    const { user, loading, logout } = useAuth();
+    const { user, loading, logout, updateProfile, refreshUserData } = useAuth();
     const navigate = useNavigate();
     const [profileData, setProfileData] = useState(null);
     const [activeTab, setActiveTab] = useState('profile');
+    const [isEditing, setIsEditing] = useState(false);
+    const [editForm, setEditForm] = useState({});
+    const [saving, setSaving] = useState(false);
+    const [message, setMessage] = useState({ type: '', text: '' });
 
     useEffect(() => {
         if (!loading && !user) {
             navigate('/login');
         } else if (user) {
             setProfileData(user);
+            setEditForm({
+                first_name: user.first_name || '',
+                last_name: user.last_name || '',
+                email: user.email || '',
+                phone_number: user.phone_number || '',
+                address: user.address || '',
+                document_id: user.document_id || ''
+            });
         }
     }, [user, loading, navigate]);
 
     const handleLogout = () => {
         logout();
         navigate('/');
+    };
+
+    const handleEditChange = (e) => {
+        setEditForm({
+            ...editForm,
+            [e.target.name]: e.target.value
+        });
+    };
+
+    const handleSaveProfile = async () => {
+        setSaving(true);
+        setMessage({ type: '', text: '' });
+        
+        try {
+            await updateProfile(editForm);
+            setProfileData({ ...profileData, ...editForm });
+            setIsEditing(false);
+            setMessage({ type: 'success', text: '¡Perfil actualizado correctamente!' });
+            setTimeout(() => setMessage({ type: '', text: '' }), 3000);
+        } catch (error) {
+            console.error('Error al actualizar perfil:', error);
+            const errorMsg = error.detail || error.email?.[0] || error.phone_number?.[0] || 'Error al actualizar el perfil';
+            setMessage({ type: 'error', text: errorMsg });
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    const handleCancelEdit = () => {
+        setIsEditing(false);
+        setEditForm({
+            first_name: profileData.first_name || '',
+            last_name: profileData.last_name || '',
+            email: profileData.email || '',
+            phone_number: profileData.phone_number || '',
+            address: profileData.address || '',
+            document_id: profileData.document_id || ''
+        });
     };
 
     if (loading) {
@@ -137,44 +187,171 @@ const Profile = () => {
                         {/* Profile Tab */}
                         {activeTab === 'profile' && (
                             <div className="bg-white rounded-2xl shadow-lg p-6 md:p-8 animate-fade-in">
+                                {/* Messages */}
+                                {message.text && (
+                                    <div className={`mb-6 p-4 rounded-xl flex items-center gap-3 ${
+                                        message.type === 'success' 
+                                            ? 'bg-green-50 border border-green-200 text-green-700' 
+                                            : 'bg-red-50 border border-red-200 text-red-700'
+                                    }`}>
+                                        <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            {message.type === 'success' ? (
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                            ) : (
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                            )}
+                                        </svg>
+                                        <span>{message.text}</span>
+                                    </div>
+                                )}
+
                                 <div className="flex items-center justify-between mb-6">
                                     <h2 className="text-2xl font-heading font-bold text-dark-blue-gray">Información Personal</h2>
-                                    <button className="text-primary-blue hover:text-dark-blue-gray font-medium text-sm flex items-center transition-colors">
-                                        <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/>
-                                        </svg>
-                                        Editar
-                                    </button>
+                                    {!isEditing ? (
+                                        <button 
+                                            onClick={() => setIsEditing(true)}
+                                            className="text-primary-blue hover:text-dark-blue-gray font-medium text-sm flex items-center transition-colors"
+                                        >
+                                            <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/>
+                                            </svg>
+                                            Editar
+                                        </button>
+                                    ) : (
+                                        <div className="flex gap-2">
+                                            <button 
+                                                onClick={handleCancelEdit}
+                                                className="text-gray-500 hover:text-gray-700 font-medium text-sm flex items-center transition-colors"
+                                            >
+                                                Cancelar
+                                            </button>
+                                            <button 
+                                                onClick={handleSaveProfile}
+                                                disabled={saving}
+                                                className="bg-primary-blue text-white px-4 py-2 rounded-lg font-medium text-sm flex items-center transition-colors hover:bg-opacity-90 disabled:opacity-50"
+                                            >
+                                                {saving ? (
+                                                    <>
+                                                        <svg className="animate-spin w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24">
+                                                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                                                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
+                                                        </svg>
+                                                        Guardando...
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"/>
+                                                        </svg>
+                                                        Guardar
+                                                    </>
+                                                )}
+                                            </button>
+                                        </div>
+                                    )}
                                 </div>
                                 
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <div className="space-y-1">
-                                        <label className="text-sm text-medium-text-gray">Nombre de usuario</label>
-                                        <p className="text-dark-blue-gray font-semibold text-lg">{profileData.username}</p>
+                                {isEditing ? (
+                                    /* Edit Mode */
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <div className="space-y-2">
+                                            <label className="text-sm font-medium text-dark-blue-gray">Nombre</label>
+                                            <input
+                                                type="text"
+                                                name="first_name"
+                                                value={editForm.first_name}
+                                                onChange={handleEditChange}
+                                                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-blue focus:border-transparent transition-all"
+                                                placeholder="Tu nombre"
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="text-sm font-medium text-dark-blue-gray">Apellido</label>
+                                            <input
+                                                type="text"
+                                                name="last_name"
+                                                value={editForm.last_name}
+                                                onChange={handleEditChange}
+                                                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-blue focus:border-transparent transition-all"
+                                                placeholder="Tu apellido"
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="text-sm font-medium text-dark-blue-gray">Correo electrónico</label>
+                                            <input
+                                                type="email"
+                                                name="email"
+                                                value={editForm.email}
+                                                onChange={handleEditChange}
+                                                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-blue focus:border-transparent transition-all"
+                                                placeholder="correo@ejemplo.com"
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="text-sm font-medium text-dark-blue-gray">Teléfono</label>
+                                            <input
+                                                type="tel"
+                                                name="phone_number"
+                                                value={editForm.phone_number}
+                                                onChange={handleEditChange}
+                                                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-blue focus:border-transparent transition-all"
+                                                placeholder="+51 999 999 999"
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="text-sm font-medium text-dark-blue-gray">DNI/Documento</label>
+                                            <input
+                                                type="text"
+                                                name="document_id"
+                                                value={editForm.document_id}
+                                                onChange={handleEditChange}
+                                                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-blue focus:border-transparent transition-all"
+                                                placeholder="12345678"
+                                            />
+                                        </div>
+                                        <div className="md:col-span-2 space-y-2">
+                                            <label className="text-sm font-medium text-dark-blue-gray">Dirección</label>
+                                            <textarea
+                                                name="address"
+                                                value={editForm.address}
+                                                onChange={handleEditChange}
+                                                rows="2"
+                                                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-blue focus:border-transparent transition-all resize-none"
+                                                placeholder="Av. Principal 123, Lima"
+                                            />
+                                        </div>
                                     </div>
-                                    <div className="space-y-1">
-                                        <label className="text-sm text-medium-text-gray">Correo electrónico</label>
-                                        <p className="text-dark-blue-gray font-semibold text-lg">{profileData.email}</p>
+                                ) : (
+                                    /* View Mode */
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <div className="space-y-1">
+                                            <label className="text-sm text-medium-text-gray">Nombre de usuario</label>
+                                            <p className="text-dark-blue-gray font-semibold text-lg">{profileData.username}</p>
+                                        </div>
+                                        <div className="space-y-1">
+                                            <label className="text-sm text-medium-text-gray">Correo electrónico</label>
+                                            <p className="text-dark-blue-gray font-semibold text-lg">{profileData.email || <span className="text-gray-400 font-normal">No registrado</span>}</p>
+                                        </div>
+                                        <div className="space-y-1">
+                                            <label className="text-sm text-medium-text-gray">Teléfono</label>
+                                            <p className="text-dark-blue-gray font-semibold text-lg">
+                                                {profileData.phone_number || <span className="text-gray-400 font-normal">No registrado</span>}
+                                            </p>
+                                        </div>
+                                        <div className="space-y-1">
+                                            <label className="text-sm text-medium-text-gray">DNI/Documento</label>
+                                            <p className="text-dark-blue-gray font-semibold text-lg">
+                                                {profileData.document_id || <span className="text-gray-400 font-normal">No registrado</span>}
+                                            </p>
+                                        </div>
+                                        <div className="md:col-span-2 space-y-1">
+                                            <label className="text-sm text-medium-text-gray">Dirección</label>
+                                            <p className="text-dark-blue-gray font-semibold text-lg">
+                                                {profileData.address || <span className="text-gray-400 font-normal">No registrada</span>}
+                                            </p>
+                                        </div>
                                     </div>
-                                    <div className="space-y-1">
-                                        <label className="text-sm text-medium-text-gray">Teléfono</label>
-                                        <p className="text-dark-blue-gray font-semibold text-lg">
-                                            {profileData.phone_number || <span className="text-gray-400 font-normal">No registrado</span>}
-                                        </p>
-                                    </div>
-                                    <div className="space-y-1">
-                                        <label className="text-sm text-medium-text-gray">DNI/Documento</label>
-                                        <p className="text-dark-blue-gray font-semibold text-lg">
-                                            {profileData.document_id || <span className="text-gray-400 font-normal">No registrado</span>}
-                                        </p>
-                                    </div>
-                                    <div className="md:col-span-2 space-y-1">
-                                        <label className="text-sm text-medium-text-gray">Dirección</label>
-                                        <p className="text-dark-blue-gray font-semibold text-lg">
-                                            {profileData.address || <span className="text-gray-400 font-normal">No registrada</span>}
-                                        </p>
-                                    </div>
-                                </div>
+                                )}
 
                                 {/* Quick Actions */}
                                 <div className="mt-8 pt-6 border-t border-gray-100">

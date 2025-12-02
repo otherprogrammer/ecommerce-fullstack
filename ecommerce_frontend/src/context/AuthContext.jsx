@@ -1,6 +1,8 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import * as authService from '../services/auth'; // Asegúrate de que esta importación esté como está
+import * as authService from '../services/auth';
+import axiosInstance from '../services/axiosInstance';
+import { API_BASE_URL } from '../config';
 
 const AuthContext = createContext(null);
 
@@ -24,6 +26,30 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
+    // Función para obtener datos completos del usuario desde el backend
+    const fetchUserProfile = async () => {
+        try {
+            const response = await axiosInstance.get('/accounts/profile/');
+            return response.data;
+        } catch (error) {
+            console.error("Error fetching user profile:", error);
+            return null;
+        }
+    };
+
+    // Función para actualizar perfil del usuario
+    const updateProfile = async (profileData) => {
+        try {
+            const response = await axiosInstance.patch('/accounts/profile/update/', profileData);
+            const updatedUser = { ...user, ...response.data };
+            setUser(updatedUser);
+            return response.data;
+        } catch (error) {
+            console.error("Error updating profile:", error);
+            throw error.response?.data || error;
+        }
+    };
+
     useEffect(() => {
         const loadUserFromToken = async () => {
             const accessToken = localStorage.getItem('access_token');
@@ -31,9 +57,17 @@ export const AuthProvider = ({ children }) => {
                 const decodedToken = decodeJwt(accessToken);
                 // Comprobar si el token decodificado es válido y no ha expirado
                 if (decodedToken && decodedToken.exp * 1000 > Date.now()) {
+                    // Obtener datos completos del usuario
+                    const profileData = await fetchUserProfile();
                     setUser({
                         username: decodedToken.username,
-                        is_staff: decodedToken.is_staff || false
+                        email: decodedToken.email || profileData?.email,
+                        is_staff: decodedToken.is_staff || false,
+                        phone_number: profileData?.phone_number,
+                        address: profileData?.address,
+                        document_id: profileData?.document_id,
+                        first_name: profileData?.first_name,
+                        last_name: profileData?.last_name,
                     });
                 } else {
                     // Si el token ha expirado o es inválido, intentar refrescarlo
@@ -42,23 +76,31 @@ export const AuthProvider = ({ children }) => {
                         try {
                             const data = await authService.refreshToken(refreshToken);
                             localStorage.setItem('access_token', data.access);
+                            // Si el backend rota refresh tokens, guardar el nuevo
+                            if (data.refresh) {
+                                localStorage.setItem('refresh_token', data.refresh);
+                            }
                             const newDecodedToken = decodeJwt(data.access);
+                            const profileData = await fetchUserProfile();
                             setUser({
                                 username: newDecodedToken.username,
-                                is_staff: newDecodedToken.is_staff || false
+                                email: newDecodedToken.email || profileData?.email,
+                                is_staff: newDecodedToken.is_staff || false,
+                                phone_number: profileData?.phone_number,
+                                address: profileData?.address,
+                                document_id: profileData?.document_id,
+                                first_name: profileData?.first_name,
+                                last_name: profileData?.last_name,
                             });
                         } catch (error) {
                             console.error("Error refreshing token in AuthContext:", error);
-                            // Si el refresco falla, limpiar tokens y redirigir
-                            authService.logout(); // Limpia localStorage
-                            setUser(null); // Limpia el estado de React
-                            navigate('/login'); // Redirige
+                            authService.logout();
+                            setUser(null);
+                            // No redirigir automáticamente, dejar que el usuario navegue
                         }
                     } else {
-                        // No hay token de refresco, limpiar tokens y redirigir
-                        authService.logout(); // Limpia localStorage
-                        setUser(null); // Limpia el estado de React
-                        navigate('/login'); // Redirige
+                        authService.logout();
+                        setUser(null);
                     }
                 }
             }
@@ -66,7 +108,7 @@ export const AuthProvider = ({ children }) => {
         };
 
         loadUserFromToken();
-    }, [navigate]); // Añade navigate a las dependencias para que useEffect no muestre advertencias
+    }, []); // Remover navigate de dependencias para evitar loops
 
     const login = async (username, password) => {
         try {
@@ -75,10 +117,18 @@ export const AuthProvider = ({ children }) => {
             localStorage.setItem('access_token', data.access);
             localStorage.setItem('refresh_token', data.refresh);
             const decodedToken = decodeJwt(data.access);
+            
+            // Obtener datos completos del usuario después del login
+            const profileData = await fetchUserProfile();
             setUser({
                 username: decodedToken.username,
-                email: decodedToken.email,
-                is_staff: decodedToken.is_staff || false
+                email: decodedToken.email || profileData?.email,
+                is_staff: decodedToken.is_staff || false,
+                phone_number: profileData?.phone_number,
+                address: profileData?.address,
+                document_id: profileData?.document_id,
+                first_name: profileData?.first_name,
+                last_name: profileData?.last_name,
             });
             setLoading(false);
             return data;
@@ -105,9 +155,17 @@ export const AuthProvider = ({ children }) => {
     };
 
     const logout = () => {
-        authService.logout(); // Llama a la función de auth.js para limpiar localStorage
-        setUser(null); // Limpia el estado del usuario en el contexto
-        navigate('/login'); // Redirige al usuario
+        authService.logout();
+        setUser(null);
+        navigate('/login');
+    };
+
+    // Refrescar datos del usuario (útil después de editar perfil)
+    const refreshUserData = async () => {
+        const profileData = await fetchUserProfile();
+        if (profileData) {
+            setUser(prev => ({ ...prev, ...profileData }));
+        }
     };
 
     if (loading) {
@@ -119,7 +177,7 @@ export const AuthProvider = ({ children }) => {
     }
 
     return (
-        <AuthContext.Provider value={{ user, login, register, logout }}>
+        <AuthContext.Provider value={{ user, login, register, logout, updateProfile, refreshUserData, loading }}>
             {children}
         </AuthContext.Provider>
     );

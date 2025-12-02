@@ -16,6 +16,7 @@ const Register = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showPassword2, setShowPassword2] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
   const navigate = useNavigate();
   const { register } = useAuth();
 
@@ -24,21 +25,75 @@ const Register = () => {
       ...formData,
       [e.target.name]: e.target.value
     });
+    // Limpiar error del campo cuando el usuario escribe
     if (errors[e.target.name]) {
       setErrors({ ...errors, [e.target.name]: '' });
     }
   };
 
+  // Validación del lado del cliente
+  const validateForm = () => {
+    const newErrors = {};
+
+    // Validar username
+    if (!formData.username.trim()) {
+      newErrors.username = 'El nombre de usuario es requerido';
+    } else if (formData.username.length < 3) {
+      newErrors.username = 'El usuario debe tener al menos 3 caracteres';
+    } else if (!/^[a-zA-Z0-9_]+$/.test(formData.username)) {
+      newErrors.username = 'Solo letras, números y guión bajo permitidos';
+    }
+
+    // Validar email
+    if (!formData.email.trim()) {
+      newErrors.email = 'El correo electrónico es requerido';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      newErrors.email = 'Ingresa un correo electrónico válido';
+    }
+
+    // Validar password
+    if (!formData.password) {
+      newErrors.password = 'La contraseña es requerida';
+    } else if (formData.password.length < 8) {
+      newErrors.password = 'La contraseña debe tener al menos 8 caracteres';
+    } else if (!/[A-Za-z]/.test(formData.password) || !/[0-9]/.test(formData.password)) {
+      newErrors.password = 'Debe contener letras y números';
+    }
+
+    // Validar confirmación de password
+    if (!formData.password2) {
+      newErrors.password2 = 'Confirma tu contraseña';
+    } else if (formData.password !== formData.password2) {
+      newErrors.password2 = 'Las contraseñas no coinciden';
+    }
+
+    // Validar términos
+    if (!acceptedTerms) {
+      newErrors.terms = 'Debes aceptar los términos y condiciones';
+    }
+
+    return newErrors;
+  };
+
   const handleRegister = async (e) => {
     e.preventDefault();
-    setErrors({});
-    setLoading(true);
-
-    if (formData.password !== formData.password2) {
-      setErrors({ password2: 'Las contraseñas no coinciden' });
-      setLoading(false);
+    
+    // Validar formulario primero
+    const validationErrors = validateForm();
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors);
+      // Scroll al primer error
+      const firstErrorField = Object.keys(validationErrors)[0];
+      const errorElement = document.getElementById(firstErrorField);
+      if (errorElement) {
+        errorElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        errorElement.focus();
+      }
       return;
     }
+
+    setErrors({});
+    setLoading(true);
 
     try {
       const response = await register(formData);
@@ -57,6 +112,7 @@ const Register = () => {
           }
         });
         
+        // Manejar errores específicos del backend
         if (processedErrors.username || processedErrors.email || processedErrors.password || 
             processedErrors.password2 || processedErrors.phone_number) {
           setErrors(processedErrors);
@@ -64,11 +120,15 @@ const Register = () => {
           setErrors({ general: processedErrors.detail });
         } else if (processedErrors.error) {
           setErrors({ general: processedErrors.error });
+        } else if (processedErrors.non_field_errors) {
+          setErrors({ general: Array.isArray(processedErrors.non_field_errors) 
+            ? processedErrors.non_field_errors.join(' ') 
+            : processedErrors.non_field_errors });
         } else {
-          setErrors({ general: JSON.stringify(processedErrors) });
+          setErrors({ general: 'Error en el registro. Verifica tus datos.' });
         }
       } else {
-        setErrors({ general: 'No se pudo registrar. Intenta de nuevo.' });
+        setErrors({ general: 'No se pudo conectar con el servidor. Intenta de nuevo.' });
       }
     } finally {
       setLoading(false);
@@ -312,19 +372,26 @@ const Register = () => {
             </div>
 
             {/* Terms */}
-            <div className="flex items-start">
-              <input
-                type="checkbox"
-                id="terms"
-                required
-                className="w-4 h-4 mt-0.5 text-primary-blue border-gray-300 rounded focus:ring-primary-blue"
-              />
-              <label htmlFor="terms" className="ml-2 text-sm text-medium-text-gray">
-                Acepto los{' '}
-                <button type="button" className="text-primary-blue hover:underline">términos y condiciones</button>
-                {' '}y la{' '}
-                <button type="button" className="text-primary-blue hover:underline">política de privacidad</button>
-              </label>
+            <div>
+              <div className="flex items-start">
+                <input
+                  type="checkbox"
+                  id="terms"
+                  checked={acceptedTerms}
+                  onChange={(e) => {
+                    setAcceptedTerms(e.target.checked);
+                    if (errors.terms) setErrors({ ...errors, terms: '' });
+                  }}
+                  className={`w-4 h-4 mt-0.5 border-gray-300 rounded focus:ring-primary-blue ${errors.terms ? 'border-red-500' : ''}`}
+                />
+                <label htmlFor="terms" className="ml-2 text-sm text-medium-text-gray">
+                  Acepto los{' '}
+                  <button type="button" className="text-primary-blue hover:underline">términos y condiciones</button>
+                  {' '}y la{' '}
+                  <button type="button" className="text-primary-blue hover:underline">política de privacidad</button>
+                </label>
+              </div>
+              {errors.terms && <p className="text-red-500 text-xs mt-1 ml-6">{errors.terms}</p>}
             </div>
 
             {/* Submit */}
