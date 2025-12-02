@@ -7,6 +7,7 @@ import ProductList from './components/ProductList';
 import ProductDetalle from './components/ProductDetalle';
 import Cart from './components/Cart';
 import Navbar from './components/Navbar';
+import Footer from './components/Footer';
 import Checkout from './components/Checkout';
 import Login from './components/Login.jsx';
 import Register from './components/Register.jsx';
@@ -20,7 +21,7 @@ function App() {
   return (
     <div className="flex flex-col min-h-screen bg-light-background">
       <Navbar />
-      <main className="flex-grow container mx-auto p-4">
+      <main className="flex-grow">
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/register" element={<Register />} />
@@ -61,6 +62,7 @@ function App() {
           } />
         </Routes>
       </main>
+      <Footer />
     </div>
   );
 }

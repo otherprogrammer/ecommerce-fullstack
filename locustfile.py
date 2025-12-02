@@ -76,19 +76,25 @@ class EcommerceUser(HttpUser):
             if product_id:
                 self.client.get(f"/api/products/{product_id}/")
     
-    @task(3)
+    @task(100)  # Peso 100 - prioridad máxima para alcanzar 10k registros
     def register_user(self):
-        """Registrar nuevo usuario"""
+        """Registrar nuevo usuario - prueba de 10k POST requests"""
+        # Usar timestamp + random para evitar duplicados
+        import time
         random_num = random.randint(10000, 99999)
+        timestamp = int(time.time() * 1000)  # Milisegundos
+        unique_id = f"{timestamp}_{random_num}"
+        
         user_data = {
-            "username": f"user_{random_num}",
-            "email": f"user_{random_num}@test.com",
+            "username": f"locust_user_{unique_id}",
+            "email": f"locust_{unique_id}@test.com",
             "password": "Test1234",
-            "first_name": "Test",
-            "last_name": "User",
-            "phone": f"99999{random_num}",
+            "password2": "Test1234",  # Confirmación de contraseña requerida
+            "first_name": "Locust",
+            "last_name": "Test",
+            "phone": f"999{random_num}",
             "address": "Calle Test 123",
-            "document_id": f"DNI{random_num}"
+            "document_id": f"DNI{unique_id}"
         }
         
         with self.client.post(
