@@ -3,6 +3,7 @@ import { Route, Routes } from 'react-router-dom';
 
 // Importa tus componentes de página
 import Home from './components/Home.jsx';
+import PromoModal from './components/PromoModal';
 import ProductList from './components/ProductList';
 import ProductDetalle from './components/ProductDetalle';
 import Cart from './components/Cart';
@@ -21,6 +22,7 @@ function App() {
   return (
     <div className="flex flex-col min-h-screen bg-light-background">
       <Navbar />
+      <PromoModal />
       <main className="flex-grow">
         <Routes>
           <Route path="/" element={<Home />} />

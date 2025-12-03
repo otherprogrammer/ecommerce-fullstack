@@ -5,15 +5,18 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { CartProvider } from './context/CartContext.jsx';
 import { BrowserRouter } from 'react-router-dom';
-import { AuthProvider } from './context/AuthContext.jsx'; 
+import { AuthProvider } from './context/AuthContext.jsx';
+import { NotificationProvider } from './context/NotificationContext.jsx';
 
 ReactDOM.createRoot(document.getElementById('root')).render(
-  <React.StrictMode> {/* React.StrictMode es buena práctica */}
-    <BrowserRouter> {/* <-- ENVOLVER CON BrowserRouter */}
-      <AuthProvider> {/* <-- ENVOLVER CON AuthProvider */}
-        <CartProvider> {/* Tu CartProvider existente */}
-          <App />
-        </CartProvider>
+  <React.StrictMode>
+    <BrowserRouter>
+      <AuthProvider>
+        <NotificationProvider>
+          <CartProvider>
+            <App />
+          </CartProvider>
+        </NotificationProvider>
       </AuthProvider>
     </BrowserRouter>
   </React.StrictMode>

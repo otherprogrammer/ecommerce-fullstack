@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
+import NotificationBell from './NotificationBell';
 
 const Navbar = () => {
     const { user, logout } = useAuth();
@@ -107,6 +108,9 @@ const Navbar = () => {
                                         </div>
                                     </div>
                                 )}
+                                
+                                {/* Notification Bell */}
+                                <NotificationBell />
                                 
                                 <NavLink to="/profile">
                                     <span className="flex items-center">
